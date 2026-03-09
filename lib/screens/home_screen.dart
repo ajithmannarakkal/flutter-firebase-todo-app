@@ -24,9 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await context.read<TaskProvider>().fetchTasks(auth.userId!, auth.token!);
   }
 
-  void _logout() {
+  void _logout() async {
     context.read<TaskProvider>().clearTasks();
-    context.read<AuthProvider>().logout();
+    await context.read<AuthProvider>().logout();
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/login');
   }
 
