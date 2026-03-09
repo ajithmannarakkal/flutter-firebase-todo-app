@@ -13,67 +13,54 @@ class AddEditTaskScreen extends StatefulWidget {
 
 class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  bool _isLoading = false;
-  TaskModel? _editingTask;
+  final _titleCtrl = TextEditingController();
+  TaskModel? _task;
+  var _isLoading = false;
+
+  bool get _isEditing => _task != null;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final task = ModalRoute.of(context)?.settings.arguments as TaskModel?;
-    if (task != null && _editingTask == null) {
-      _editingTask = task;
-      _titleController.text = task.title;
+    final arg = ModalRoute.of(context)?.settings.arguments;
+    if (arg is TaskModel && _task == null) {
+      _task = arg;
+      _titleCtrl.text = arg.title;
     }
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
+    _titleCtrl.dispose();
     super.dispose();
   }
 
-  bool get _isEditing => _editingTask != null;
-
-  Future<void> _submit() async {
+  void _save() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    bool success;
+    final auth = context.read<AuthProvider>();
+    final taskProv = context.read<TaskProvider>();
+    final title = _titleCtrl.text.trim();
 
+    bool success;
     if (_isEditing) {
-      final updatedTask = _editingTask!.copyWith(
-        title: _titleController.text.trim(),
-      );
-      success = await taskProvider.updateTask(
-        auth.userId!,
-        auth.token!,
-        updatedTask,
-      );
+      final updated = _task!.copyWith(title: title);
+      success = await taskProv.updateTask(auth.userId!, auth.token!, updated);
     } else {
-      success = await taskProvider.addTask(
-        auth.userId!,
-        auth.token!,
-        _titleController.text.trim(),
-      );
+      success = await taskProv.addTask(auth.userId!, auth.token!, title);
     }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (success) {
-        Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              taskProvider.error ?? 'Something went wrong',
-            ),
-          ),
-        );
-      }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (success) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(taskProv.error ?? 'Something went wrong')),
+      );
     }
   }
 
@@ -94,29 +81,29 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                controller: _titleController,
+                controller: _titleCtrl,
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   labelText: 'Task Title',
-                  hintText: 'Enter task title',
+                  hintText: 'What do you need to do?',
                   prefixIcon: Icon(Icons.task_outlined),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a task title';
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter a title';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
+                onPressed: _isLoading ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -126,12 +113,10 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                            strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        _isEditing ? 'Update Task' : 'Add Task',
+                        _isEditing ? 'Update' : 'Add Task',
                         style: const TextStyle(fontSize: 16),
                       ),
               ),

@@ -11,24 +11,24 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  var _hidePass = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.signIn(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
+    final auth = context.read<AuthProvider>();
+    final success = await auth.signIn(
+      _emailCtrl.text.trim(),
+      _passCtrl.text.trim(),
     );
 
     if (success && mounted) {
@@ -48,104 +48,91 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
+                Icon(
                   Icons.check_circle_outline,
                   size: 80,
-                  color: Colors.deepPurple,
+                  color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'Welcome Back',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Sign in to continue',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32),
+
+                // email field
                 TextFormField(
-                  controller: _emailController,
+                  controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Enter your email';
                     }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
+                    if (!val.contains('@')) return 'Enter a valid email';
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // password field
                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
+                  controller: _passCtrl,
+                  obscureText: _hidePass,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                          _hidePass ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _hidePass = !_hidePass),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Enter your password';
+                    if (val.length < 6) return 'Must be at least 6 characters';
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
+
+                // error message
                 Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    if (auth.error != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          auth.error!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
+                  builder: (ctx, auth, _) {
+                    if (auth.error == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        auth.error!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // login button
                 Consumer<AuthProvider>(
-                  builder: (context, auth, child) {
+                  builder: (ctx, auth, _) {
                     return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _submit,
+                      onPressed: auth.isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -155,22 +142,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                                  strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text(
-                              'Login',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                          : const Text('Login', style: TextStyle(fontSize: 16)),
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    Provider.of<AuthProvider>(context, listen: false)
-                        .clearError();
+                    context.read<AuthProvider>().clearError();
                     Navigator.of(context).pushReplacementNamed('/signup');
                   },
                   child: const Text("Don't have an account? Sign Up"),

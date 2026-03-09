@@ -30,27 +30,26 @@ class TaskTile extends StatelessWidget {
           task.title,
           style: TextStyle(
             fontSize: 16,
-            decoration:
-                task.isCompleted ? TextDecoration.lineThrough : null,
+            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
             color: task.isCompleted ? Colors.grey : null,
           ),
         ),
         subtitle: Text(
-          DateFormat('MMM dd, yyyy – hh:mm a').format(task.createdAt),
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          DateFormat.yMMMd().add_jm().format(task.createdAt),
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.deepPurple),
+              icon: const Icon(Icons.edit, size: 20),
+              color: Colors.deepPurple,
               onPressed: onEdit,
-              tooltip: 'Edit',
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: const Icon(Icons.delete_outline, size: 20),
+              color: Colors.red[400],
               onPressed: onDelete,
-              tooltip: 'Delete',
             ),
           ],
         ),

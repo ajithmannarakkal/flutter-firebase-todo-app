@@ -11,27 +11,27 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+  var _hidePass = true;
+  var _hideConfirmPass = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.signUp(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
+    final auth = context.read<AuthProvider>();
+    final success = await auth.signUp(
+      _emailCtrl.text.trim(),
+      _passCtrl.text.trim(),
     );
 
     if (success && mounted) {
@@ -51,135 +51,112 @@ class _SignupScreenState extends State<SignupScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
+                Icon(
                   Icons.person_add_outlined,
                   size: 80,
-                  color: Colors.deepPurple,
+                  color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 16),
                 const Text(
                   'Create Account',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Sign up to get started',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32),
+
+                // email
                 TextFormField(
-                  controller: _emailController,
+                  controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return 'Enter email';
+                    if (!val.contains('@')) return 'Enter a valid email';
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // password
                 TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
+                  controller: _passCtrl,
+                  obscureText: _hidePass,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                          _hidePass ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _hidePass = !_hidePass),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Enter a password';
+                    if (val.length < 6) return 'Must be at least 6 characters';
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // confirm password
                 TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
+                  controller: _confirmPassCtrl,
+                  obscureText: _hideConfirmPass,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
+                      icon: Icon(_hideConfirmPass
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      onPressed: () =>
+                          setState(() => _hideConfirmPass = !_hideConfirmPass),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Confirm password';
+                    if (val != _passCtrl.text) return 'Passwords do not match';
                     return null;
                   },
                 ),
                 const SizedBox(height: 8),
+
+                // error
                 Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    if (auth.error != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          auth.error!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
+                  builder: (ctx, auth, _) {
+                    if (auth.error == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        auth.error!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 16),
+
                 Consumer<AuthProvider>(
-                  builder: (context, auth, child) {
+                  builder: (ctx, auth, _) {
                     return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _submit,
+                      onPressed: auth.isLoading ? null : _signUp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -189,22 +166,17 @@ class _SignupScreenState extends State<SignupScreen> {
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                                  strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text(
-                              'Sign Up',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                          : const Text('Sign Up',
+                              style: TextStyle(fontSize: 16)),
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextButton(
                   onPressed: () {
-                    Provider.of<AuthProvider>(context, listen: false)
-                        .clearError();
+                    context.read<AuthProvider>().clearError();
                     Navigator.of(context).pushReplacementNamed('/login');
                   },
                   child: const Text('Already have an account? Login'),

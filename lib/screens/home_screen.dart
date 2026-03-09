@@ -15,26 +15,49 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _fetchTasks();
   }
 
-  Future<void> _loadTasks() async {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    if (auth.isAuth) {
-      await Provider.of<TaskProvider>(context, listen: false)
-          .fetchTasks(auth.userId!, auth.token!);
-    }
+  Future<void> _fetchTasks() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuth) return;
+    await context.read<TaskProvider>().fetchTasks(auth.userId!, auth.token!);
   }
 
   void _logout() {
-    Provider.of<TaskProvider>(context, listen: false).clearTasks();
-    Provider.of<AuthProvider>(context, listen: false).logout();
+    context.read<TaskProvider>().clearTasks();
+    context.read<AuthProvider>().logout();
     Navigator.of(context).pushReplacementNamed('/login');
+  }
+
+  void _confirmDelete(TaskProvider taskProv, String taskId) {
+    final auth = context.read<AuthProvider>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: const Text('Are you sure you want to delete this task?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              taskProv.deleteTask(auth.userId!, auth.token!, taskId);
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = context.read<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -45,30 +68,26 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
             onPressed: _logout,
           ),
         ],
       ),
       body: Consumer<TaskProvider>(
-        builder: (context, taskProvider, _) {
-          if (taskProvider.isLoading) {
+        builder: (ctx, taskProv, _) {
+          if (taskProv.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (taskProvider.error != null) {
+          if (taskProv.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    taskProvider.error!,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(taskProv.error!,
+                      style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadTasks,
+                    onPressed: _fetchTasks,
                     child: const Text('Retry'),
                   ),
                 ],
@@ -76,17 +95,17 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          if (taskProvider.tasks.isEmpty) {
-            return const Center(
+          if (taskProv.tasks.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.task_alt, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Icon(Icons.task_alt, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
                   Text(
                     'No tasks yet!\nTap + to add a new task.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -94,30 +113,20 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: _loadTasks,
+            onRefresh: _fetchTasks,
             child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: taskProvider.tasks.length,
-              itemBuilder: (context, index) {
-                final task = taskProvider.tasks[index];
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              itemCount: taskProv.tasks.length,
+              itemBuilder: (ctx, i) {
+                final task = taskProv.tasks[i];
                 return TaskTile(
                   task: task,
-                  onToggle: () {
-                    taskProvider.toggleComplete(
-                      auth.userId!,
-                      auth.token!,
-                      task,
-                    );
-                  },
-                  onEdit: () {
-                    Navigator.of(context).pushNamed(
-                      '/add-edit-task',
-                      arguments: task,
-                    );
-                  },
-                  onDelete: () {
-                    _showDeleteDialog(context, taskProvider, auth, task.id!);
-                  },
+                  onToggle: () => taskProv.toggleComplete(
+                      auth.userId!, auth.token!, task),
+                  onEdit: () => Navigator.pushNamed(
+                      context, '/add-edit-task',
+                      arguments: task),
+                  onDelete: () => _confirmDelete(taskProv, task.id!),
                 );
               },
             ),
@@ -127,35 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.of(context).pushNamed('/add-edit-task');
-        },
+        onPressed: () => Navigator.pushNamed(context, '/add-edit-task'),
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, TaskProvider taskProvider,
-      AuthProvider auth, String taskId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Task'),
-        content: const Text('Are you sure you want to delete this task?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              taskProvider.deleteTask(auth.userId!, auth.token!, taskId);
-              Navigator.of(ctx).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
   }

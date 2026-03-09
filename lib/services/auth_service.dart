@@ -2,36 +2,25 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  // Replace with your Firebase Web API Key
-  static const String _apiKey = 'AIzaSyCGf3zCB26IIRf6hogYv8MpVxqrVrYiNnc';
+  static const _apiKey = 'AIzaSyCGf3zCB26IIRf6hogYv8MpVxqrVrYiNnc';
 
-  static const String _signUpUrl =
+  static const _signUpUrl =
       'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_apiKey';
-  static const String _signInUrl =
+  static const _signInUrl =
       'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$_apiKey';
 
   Future<Map<String, dynamic>> signUp(String email, String password) async {
-    final response = await http.post(
-      Uri.parse(_signUpUrl),
-      body: json.encode({
-        'email': email,
-        'password': password,
-        'returnSecureToken': true,
-      }),
-    );
-
-    final responseData = json.decode(response.body);
-
-    if (response.statusCode != 200) {
-      throw _handleError(responseData);
-    }
-
-    return responseData;
+    return _authenticate(email, password, _signUpUrl);
   }
 
   Future<Map<String, dynamic>> signIn(String email, String password) async {
+    return _authenticate(email, password, _signInUrl);
+  }
+
+  Future<Map<String, dynamic>> _authenticate(
+      String email, String password, String url) async {
     final response = await http.post(
-      Uri.parse(_signInUrl),
+      Uri.parse(url),
       body: json.encode({
         'email': email,
         'password': password,
@@ -39,20 +28,19 @@ class AuthService {
       }),
     );
 
-    final responseData = json.decode(response.body);
+    final data = json.decode(response.body);
 
     if (response.statusCode != 200) {
-      throw _handleError(responseData);
+      throw _getErrorMessage(data);
     }
 
-    return responseData;
+    return data;
   }
 
-  String _handleError(Map<String, dynamic> responseData) {
-    final errorMessage =
-        responseData['error']?['message'] ?? 'An error occurred';
+  String _getErrorMessage(Map<String, dynamic> data) {
+    final error = data['error']?['message'] ?? 'Something went wrong';
 
-    switch (errorMessage) {
+    switch (error) {
       case 'EMAIL_EXISTS':
         return 'This email is already registered.';
       case 'INVALID_EMAIL':
@@ -68,7 +56,7 @@ class AuthService {
       case 'USER_DISABLED':
         return 'This account has been disabled.';
       default:
-        return errorMessage;
+        return error;
     }
   }
 }
