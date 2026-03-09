@@ -5,7 +5,7 @@ import '../models/task_model.dart';
 class TaskService {
   // Replace with your Firebase Realtime Database URL
   static const String _baseUrl =
-      'https://YOUR_PROJECT_ID.firebaseio.com';
+      'https://fir-todo-app-adb17-default-rtdb.firebaseio.com';
 
   Future<List<TaskModel>> getTasks(String userId, String token) async {
     final url = '$_baseUrl/tasks/$userId.json?auth=$token';

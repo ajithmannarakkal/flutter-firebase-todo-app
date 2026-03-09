@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AuthService {
   // Replace with your Firebase Web API Key
-  static const String _apiKey = 'YOUR_FIREBASE_API_KEY';
+  static const String _apiKey = 'AIzaSyCGf3zCB26IIRf6hogYv8MpVxqrVrYiNnc';
 
   static const String _signUpUrl =
       'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$_apiKey';
