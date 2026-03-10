@@ -26,7 +26,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _errorMsg;
 
-  // try to auto-login from saved token
+
   Future<bool> tryAutoLogin() async {
     final savedToken = await _storage.read(key: 'token');
     final savedUserId = await _storage.read(key: 'userId');
@@ -71,7 +71,7 @@ class AuthProvider with ChangeNotifier {
         Duration(seconds: int.parse(data['expiresIn'])),
       );
 
-      // save to secure storage
+
       await _storage.write(key: 'token', value: _token);
       await _storage.write(key: 'userId', value: _userId);
       await _storage.write(key: 'expiryDate', value: _expiryDate!.toIso8601String());

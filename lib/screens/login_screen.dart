@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // email field
+
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // password field
+
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _hidePass,
@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // error message
+
                 Consumer<AuthProvider>(
                   builder: (ctx, auth, _) {
                     if (auth.error == null) return const SizedBox.shrink();
@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // login button
+
                 Consumer<AuthProvider>(
                   builder: (ctx, auth, _) {
                     return ElevatedButton(

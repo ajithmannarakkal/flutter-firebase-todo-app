@@ -70,7 +70,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // email
+
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
@@ -87,7 +87,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // password
+
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _hidePass,
@@ -109,7 +109,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // confirm password
+
                 TextFormField(
                   controller: _confirmPassCtrl,
                   obscureText: _hideConfirmPass,
@@ -133,7 +133,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // error
+
                 Consumer<AuthProvider>(
                   builder: (ctx, auth, _) {
                     if (auth.error == null) return const SizedBox.shrink();

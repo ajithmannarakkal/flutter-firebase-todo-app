@@ -1,6 +1,7 @@
 class TaskModel {
   final String? id;
   final String title;
+  // final String? description; // TODO: add this later?
   final bool isCompleted;
   final DateTime createdAt;
 

@@ -11,6 +11,7 @@ class TaskService {
     final res = await http.get(Uri.parse(url));
 
     if (res.statusCode != 200) {
+      print('fetch error: ${res.statusCode}');
       throw 'Failed to load tasks';
     }
 

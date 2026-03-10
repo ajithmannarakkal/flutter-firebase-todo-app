@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.read<AuthProvider>();
     if (!auth.isAuth) return;
     await context.read<TaskProvider>().fetchTasks(auth.userId!, auth.token!);
+    // print('tasks loaded');
   }
 
   void _logout() async {
